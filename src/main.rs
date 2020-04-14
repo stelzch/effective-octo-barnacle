@@ -11,18 +11,10 @@ use audio::generator::AudioHandle;
 fn main() {
     let audio : AudioHandle = audio::generator::init_audio();
 
-    // Construct a sine wavetable
-    const FREQ : u32 = 440;
-    const SAMPLES_PER_REPETITION : usize = (audio::generator::SAMPLE_RATE / FREQ) as usize;
-    const vol : f64 = 0.6;
+    let left_wavetable = audio::generator::sine_wavetable(444, 0.0, 0.2);
+    let right_wavetable = audio::generator::sine_wavetable(444, 0.0, 0.7);
 
-    let wavetable = audio::generator::func_to_wavetable(SAMPLES_PER_REPETITION,
-        |t|  {
-            ((f64::from(t as i32) / f64::from(SAMPLES_PER_REPETITION as i32) * 2.0 * PI).sin()
-                * 2.0f64.powi(15) * vol) as i16
-        });
-
-    let audio_data = audio::generator::wavetable_to_data(&wavetable, &wavetable);
+    let audio_data = audio::generator::wavetable_to_data(&left_wavetable, &right_wavetable);
 
     loop {
         audio.pa.write(&audio_data).expect("Failed to write");
