@@ -1,9 +1,13 @@
+use std::f64::consts::PI;
+
+#[derive(Clone)]
 pub struct Point2D {
     pub x: f64,
     pub y: f64,
 }
 
-type Matrix2D = [[f64; 2]; 2];
+pub type Matrix2D = [[f64; 2]; 2];
+pub type Vector2D = Point2D;
 
 fn rotation_matrix(angle: f64) -> Matrix2D {
     let mut m: Matrix2D = [[0.0; 2]; 2];
@@ -13,30 +17,6 @@ fn rotation_matrix(angle: f64) -> Matrix2D {
     m[1][1] = f64::cos(angle);
 
     m
-}
-pub fn rectangle(x : f64, y : f64, width : f64, height : f64) -> Polygon {
-    Polygon {
-        points: vec![
-            Point2D {
-                x,
-                y
-            },
-            Point2D {
-                x,
-                y: y + height
-            },
-            Point2D {
-                x: x + width,
-                y: y + height
-            },
-            Point2D {
-                x: x + width,
-                y
-            }
-        ],
-        x,
-        y
-    }
 }
 
 impl Point2D {
@@ -68,6 +48,7 @@ impl Point2D {
     }
 }
 
+#[derive(Clone)]
 pub struct Polygon {
     pub points: Vec<Point2D>,
     pub x: f64,
@@ -75,6 +56,50 @@ pub struct Polygon {
 }
 
 impl Polygon {
+    pub fn new(r : &Rectangle) -> Polygon {
+        Polygon {
+            points: vec![
+                Point2D {
+                    x: r.pos.x,
+                    y: r.pos.y
+                },
+                Point2D {
+                    x: r.pos.x,
+                    y: r.pos.y + r.height
+                },
+                Point2D {
+                    x: r.pos.x + r.width,
+                    y: r.pos.y + r.height
+                },
+                Point2D {
+                    x: r.pos.x + r.width,
+                    y: r.pos.y
+                }
+            ],
+            x: r.pos.x,
+            y: r.pos.y
+        }
+    }
+
+    pub fn new_circle(num_points : i32, r : f64, pos : Point2D,) -> Polygon {
+        let mut points : Vec<Point2D> = vec![];
+
+        for p in 0..num_points {
+            let a : f64 = f64::from(p) / f64::from(num_points) * 2.0 * PI;
+
+            points.push(Point2D {
+                x: f64::sin(a) * r,
+                y: f64::cos(a) * r
+            });
+        }
+
+        Polygon {
+            points,
+            x: pos.x,
+            y: pos.y
+        }
+    }
+
     pub fn iterate_lines_mut(&self, mut f: impl FnMut(&Point2D, &Point2D)) {
         if self.points.len() < 2 {
             panic!("Can't iterate over lines with a polygon that has less than 2 points");
@@ -122,5 +147,25 @@ pub fn interpolate_points(a: &Point2D, b: &Point2D, t: f64) -> Point2D {
     Point2D {
         x: a.x + (t * diff_x),
         y: a.y + (t * diff_y),
+    }
+}
+
+#[derive(Clone)]
+pub struct Rectangle {
+    pub pos: Point2D,
+    pub width: f64,
+    pub height: f64
+}
+
+impl Rectangle {
+    pub fn new(x : f64, y : f64, width : f64, height : f64) -> Rectangle {
+        Rectangle {
+            pos: Point2D {
+                x,
+                y
+            },
+            width,
+            height
+        }
     }
 }

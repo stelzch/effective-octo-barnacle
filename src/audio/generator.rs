@@ -6,6 +6,7 @@ use pulse::sample;
 use std::f64::consts::PI;
 use crate::graphics::Polygon;
 use crate::graphics::interpolate_points;
+use crate::engine::Entity;
 use std::cmp::max;
 use std::slice;
 
@@ -76,22 +77,22 @@ pub fn func_to_wavetable(num_samples : usize, f : impl Fn(usize) -> i16) -> Vec<
     wavetable
 }
 
-pub fn sine_wavetable(freq : u32, phase : f64, amplitude : f64) -> Vec<i16> {
+pub fn sine_wavetable(freq : u32, phase : f64, amplitude : f64, offset : f64) -> Vec<i16> {
     let samples_per_repetition : usize = (SAMPLE_RATE / freq) as usize;
 
     return func_to_wavetable(samples_per_repetition, |t|  {
-        ((f64::from(t as i32) / f64::from(samples_per_repetition as i32) * 2.0 * PI + phase).sin()
+        (((f64::from(t as i32) / f64::from(samples_per_repetition as i32) * 2.0 * PI + phase).sin() + offset)
             * 2.0f64.powi(BIT_DEPTH as i32 - 1) * amplitude) as i16
     });
 }
 
-pub fn polygon(num_samples : usize, polygon : &Polygon) -> Vec<u8> {
+pub fn entity_to_wavetable(num_samples : usize, entity : &Entity) -> Vec<u8> {
     let mut left_channel : Vec<i16> = vec!(0; num_samples);
     let mut right_channel : Vec<i16> = vec!(0; num_samples);
 
-    let perimeter = polygon.perimeter();
+    let perimeter = entity.geometry.perimeter();
     let mut starting_index : usize = 0;
-    polygon.iterate_lines_mut(|a, b| {
+    entity.geometry.iterate_lines_mut(|a, b| {
         let line_length = a.distance_to(b);
         let line_samples = (f64::from(line_length) / perimeter * f64::from(num_samples as i32)) as usize;
         for x in 0..(line_samples) {
@@ -103,8 +104,8 @@ pub fn polygon(num_samples : usize, polygon : &Polygon) -> Vec<u8> {
                 idx = num_samples - 1;
             }
 
-            left_channel[idx] = (polygon.x + intermediate_point.x * 2.0f64.powi(BIT_DEPTH as i32 -1) * 0.9) as i16;
-            right_channel[idx] = (polygon.y + intermediate_point.y * 2.0f64.powi(BIT_DEPTH as i32 -1) * 0.9) as i16;
+            left_channel[idx] = ((entity.pos.x + intermediate_point.x) * 2.0f64.powi(BIT_DEPTH as i32 -1) * 0.9) as i16;
+            right_channel[idx] = ((entity.pos.y + intermediate_point.y) * 2.0f64.powi(BIT_DEPTH as i32 -1) * 0.9) as i16;
 
         }
 
